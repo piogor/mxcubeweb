@@ -376,6 +376,40 @@ export function addTaskResultAction(
   };
 }
 
+export function setSSXModeAction(ssx_mode) {
+  return { type: 'SET_SSX_MODE', ssx_mode };
+}
+
+export function setSSXMode(ssxmode) {
+  return (dispatch) => {
+    return (
+      fetch('mxcube/api/v0.1/queue/ssx_mode', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+        },
+        body: JSON.stringify(ssxmode),
+      })
+        /* eslint-disable promise/prefer-await-to-then */
+        .then((response) => {
+          if (response.status >= 400) {
+            dispatch(showErrorPanel(true, 'Could not set/unset setSSXMode'));
+          }
+          return response.json();
+        })
+        .then((response) => {
+          let a = response.ssx_mode;
+          /* eslint-disable promise/always-return */
+          a = a === undefined ? false : a;
+          dispatch(setSSXModeAction(a));
+        })
+    );
+    /* eslint-enable promise/prefer-await-to-then */
+  };
+}
+
 export function deleteSamplesFromQueue(sampleIDList) {
   return async (dispatch) => {
     dispatch(queueLoading(true));
