@@ -44,17 +44,18 @@ export default function CustomObjectFieldTemplate({
           ))}
         </>
       )}
-      {groupNames.map((group) => {
-        const fields = groupedFieldsMap[group];
-        return (
-          <div key={group}>
-            <FieldsHeader title={group} />
-            <CollapsableRows defaultCollapsed={false}>
-              <div className="row">{fields.map(({ content }) => content)}</div>
-            </CollapsableRows>
-          </div>
-        );
-      })}
+      {Object.entries(otherGroups).map(([groupName, groupRows]) => (
+        <div key={groupName}>
+          <FieldsHeader title={groupName} />
+          <CollapsableRows title={groupName}>
+            {Object.entries(groupRows).map(([rowName, fields]) => (
+              <div key={rowName} className="row">
+                {fields.map(({ content }) => content)}
+              </div>
+            ))}
+          </CollapsableRows>
+        </div>
+      ))}
     </div>
   );
 }
