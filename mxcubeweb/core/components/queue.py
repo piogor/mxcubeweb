@@ -2851,6 +2851,31 @@ class Queue(ComponentBase):
     def update_dependent_field(self, task_name, data):
         return HWR.beamline.queue_model.update_dependent_field(task_name, data)
 
+    def get_estimated_time(self, task_name: str, field_data: dict[str, Any]) -> int:
+        """Return the estimated time for the task to finish given the parameters.
+
+        Args:
+            task_name: The name of the task.
+            field_data: The parameters for the task.
+
+        Returns:
+            int: The estimated time in seconds.
+        """
+        try:
+            queue_entry = qe.get_queue_entry_from_task_name(task_name)
+            data_model = getattr(queue_entry, "DATA_MODEL", None)
+            estimated_time = data_model.get_estimated_time(field_data)
+        except AttributeError:
+            # The get_estimated_time function is not implemented for the task.
+            estimated_time = 0
+        except Exception:
+            logging.getLogger("MX3.HWR").exception(
+                f"Could not estimate time for {task_name}"
+            )
+            estimated_time = 0
+
+        return estimated_time
+
     def get_default_task_parameters(self, task_name):
         acq_parameters = HWR.beamline.get_default_acquisition_parameters(
             task_name

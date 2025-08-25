@@ -8,7 +8,7 @@ import { Button, ButtonToolbar, Col, Form, Modal, Row } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import { formValueSelector, reduxForm } from 'redux-form';
 
-import { sendUpdateDependentFields } from '../../api/queue';
+import { getEstimatedTime, sendUpdateDependentFields } from '../../api/queue';
 import { DraggableModal } from '../DraggableModal';
 import CustomFieldErrorTemplate from './CustomFieldErrorTemplate';
 import CustomFieldTemplate from './CustomFieldTemplate';
@@ -38,6 +38,7 @@ class GenericTaskForm extends React.Component {
     this.defaultParameters = this.defaultParameters.bind(this);
     this.state = {
       rjsfErrors: [],
+      estimatedTimeString: '',
     };
     this.jsformData = {};
   }
@@ -125,6 +126,11 @@ class GenericTaskForm extends React.Component {
             </Button>
           </ButtonToolbar>
           <ButtonToolbar>
+            {this.state.estimatedTimeString !== '' && (
+              <div className="me-3">
+                Estimated Time: {this.state.estimatedTimeString}
+              </div>
+            )}
             <Button
               className="me-3 ms-3"
               size="sm"
@@ -252,7 +258,46 @@ class GenericTaskForm extends React.Component {
           this.flash(el);
         }
       }
+      this.updateEstimatedTime(this.jsformData);
     });
+  }
+
+  /**
+   * Update the estimated time for the task based on the current form data
+   *
+   * The estimated time is fetched from the queue entry and displayed in the footer
+   * of the JSForm. It follows HH:MM:SS format.
+   *
+   * @param {Object} formData - form data from JSForm
+   * @returns {Promise<void>}
+   */
+  async updateEstimatedTime(formData) {
+    let estimatedTimeInSeconds = 0;
+    try {
+      estimatedTimeInSeconds = await getEstimatedTime(
+        this.props.taskData.type,
+        formData,
+      );
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error fetching estimated time:', error);
+      estimatedTimeInSeconds = 0;
+    }
+
+    if (estimatedTimeInSeconds === 0) {
+      this.setState({ estimatedTimeString: '' });
+      return;
+    }
+    const estimatedTimeString = `
+      ${String(Math.floor(estimatedTimeInSeconds / 3600)).padStart(2, '0')}:
+      ${String(Math.floor(estimatedTimeInSeconds / 60) % 60).padStart(2, '0')}:
+      ${String(estimatedTimeInSeconds % 60).padStart(2, '0')}
+    `
+      // removes whitespaces, caused by the template literal spanning multiple lines
+      .replaceAll(/\s+/gu, '')
+      .trim();
+
+    this.setState({ estimatedTimeString });
   }
 
   render() {

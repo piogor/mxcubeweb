@@ -242,6 +242,18 @@ def init_route(app, server, url_prefix):  # noqa: C901
         resp.status_code = 200
         return resp
 
+    @bp.route("/get_estimated_time", methods=["POST"])
+    @server.restrict
+    def get_estimated_time():
+        """Updates the dependent fields of the given task."""
+        args = request.get_json()
+        resp = jsonify(
+            app.queue.get_estimated_time(args["task_name"], args["field_data"])
+        )
+
+        resp.status_code = 200
+        return resp
+
     @bp.route("/automount", methods=["POST"])
     @server.require_control
     @server.restrict

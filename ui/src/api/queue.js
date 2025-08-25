@@ -82,3 +82,9 @@ export function sendUpdateDependentFields(
     )
     .safeJson();
 }
+
+export function getEstimatedTime(task_name, field_data) {
+  return endpoint
+    .post({ task_name, field_data }, '/get_estimated_time')
+    .safeJson();
+}
