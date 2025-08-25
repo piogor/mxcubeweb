@@ -1,0 +1,16 @@
+.updated {
+  animation-name: rjsf-flash;
+  animation-duration: 700ms;
+  animation-timing-function: ease-out;
+  /* no 'forwards' so it returns to normal and can retrigger cleanly */
+  will-change: box-shadow;
+}
+
+@keyframes rjsf-flash {
+  from {
+    box-shadow: 0 0 0 3px rgba(var(--bs-warning-rgb), 0.8);
+  }
+  to {
+    box-shadow: 0 0 0 1px rgba(var(--bs-warning-rgb), 0);
+  }
+}

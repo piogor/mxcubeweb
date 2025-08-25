@@ -20,6 +20,7 @@ import {
   StaticField,
   toFixed,
 } from './fields';
+import styles from './GenericTaskForm.module.css';
 import validate from './validate';
 import warn from './warning';
 import CheckboxWidget from './Widgets/CheckboxWidget/CheckboxWidget';
@@ -213,16 +214,42 @@ class GenericTaskForm extends React.Component {
     return s;
   }
 
-  updateFromRemoteValidation(formData) {
-    // eslint-disable-next-line promise/prefer-await-to-then, promise/catch-or-return
-    sendUpdateDependentFields(this.props.taskData.type, formData).then((_d) => {
-      const data = JSON.parse(_d);
+  /**
+   * Make the input element flash to indicate it has been updated
+   *
+   * @param {Element} element - the input, which we want to highlight
+   */
+  flash(element) {
+    element.classList.remove(styles.updated);
+    // makes sure that the removal of the class is processed before adding it back
+    // the offsetWidth is dependent on the layout, thus reading it makes the browser
+    // abandon optimizing DOM changes by batching them.
+    void element.offsetWidth;
 
+    element.classList.add(styles.updated);
+  }
+
+  /**
+   *
+   * @param {Object} formData - form data from JSForm
+   * @param {string} updatedFieldName - id of the field that changed
+   */
+  updateFromRemoteValidation(formData, updatedFieldName) {
+    // eslint-disable-next-line promise/catch-or-return
+    sendUpdateDependentFields(
+      this.props.taskData.type,
+      formData,
+      updatedFieldName,
+      // eslint-disable-next-line promise/prefer-await-to-then
+    ).then((_d) => {
+      const data = JSON.parse(_d);
       // eslint-disable-next-line guard-for-in
       for (const fieldName in data) {
+        this.jsformData[fieldName] = data[fieldName];
         const el = document.querySelector(`#root_${fieldName}`);
         if (el !== null) {
           el.value = data[fieldName];
+          this.flash(el);
         }
       }
     });
@@ -299,9 +326,13 @@ class GenericTaskForm extends React.Component {
               validator={validator}
               schema={schema}
               uiSchema={uiSchema}
+              formData={this.jsformData}
               showErrorList={false}
-              onChange={({ formData, errors }) => {
-                this.updateFromRemoteValidation(formData);
+              onChange={({ formData, errors }, fieldId) => {
+                // id will be in the form of root_<fieldName>
+                // as root_ is the prefix used by JSForm for the field IDs
+                const fieldName = fieldId?.replace('root_', '');
+                this.updateFromRemoteValidation(formData, fieldName);
                 this.saveCurrentJSFormParameters(formData);
                 this.jsformData = formData;
                 this.setState({ rjsfErrors: errors });

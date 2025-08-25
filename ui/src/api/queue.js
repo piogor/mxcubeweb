@@ -70,8 +70,15 @@ export function sendSetQueueSettings(name, value) {
   return endpoint.post({ name, value }, '/setting').res();
 }
 
-export function sendUpdateDependentFields(task_name, field_data) {
+export function sendUpdateDependentFields(
+  task_name,
+  field_data,
+  updated_field_name,
+) {
   return endpoint
-    .post({ task_name, field_data }, '/update_dependent_field')
+    .post(
+      { task_name, field_data, updated_field_name },
+      '/update_dependent_field',
+    )
     .safeJson();
 }
