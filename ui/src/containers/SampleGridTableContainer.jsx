@@ -562,6 +562,7 @@ export default function SampleGridTableContainer(props) {
                   pickButtonOnClickHandler={sampleItemPickButtonOnClickHandler}
                   sampleData={sample}
                   queueOrder={queue.queue.indexOf(key) + 1}
+                  selected={selected[key]}
                   current={isCurrent}
                   picked={picked}
                 >
