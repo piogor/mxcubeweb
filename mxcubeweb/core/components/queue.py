@@ -2465,6 +2465,9 @@ class Queue(ComponentBase):
             namespace="/hwr",
         )
 
+    def update_queue(self):
+        self.app.server.emit("update_queue", {}, namespace="/hwr")
+
     def queue_interleaved_started(self):
         node = self.last_queue_node()
 
@@ -2675,7 +2678,7 @@ class Queue(ComponentBase):
             "energy_scan_finished", self.energy_scan_finished
         )
 
-        HWR.beamline.queue_manager.connect("taskResultReady", signals.update_queue)
+        HWR.beamline.queue_manager.connect("taskResultReady", self.update_queue)
 
     def queue_toggle_sample(self, entry):
         if isinstance(entry, qe.SampleQueueEntry):
