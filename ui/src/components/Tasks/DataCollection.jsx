@@ -2,11 +2,21 @@
 import React from 'react';
 import { Button, ButtonToolbar, Col, Form, Modal, Row } from 'react-bootstrap';
 import { connect } from 'react-redux';
-import { formValueSelector, reduxForm } from 'redux-form';
+import { Field, formValueSelector, reduxForm } from 'redux-form';
 
 import { SPACE_GROUPS } from '../../constants';
 import { DraggableModal } from '../DraggableModal';
 import asyncValidate from './asyncValidate';
+import {
+  calculateDoseColors,
+  calculateDoseValues,
+  calculateFluxValue,
+  DOSE_EXPERIMENTAL_GOALS,
+  getDoseCalculationContext,
+  getDoseLimitFromResolutionGoal,
+  getExperimentalGoalPreset,
+  interpolateResolutionForEnergy,
+} from './calculations';
 import {
   CollapsableRows,
   FieldsHeader,
@@ -32,6 +42,10 @@ class DataCollection extends React.Component {
     this.submitRunNow = this.submitRunNow.bind(this);
     this.addToQueue = this.addToQueue.bind(this);
     this.defaultParameters = this.defaultParameters.bind(this);
+
+    // Dose calculation related bindings
+    this.onChangeExperimentalGoal = this.onChangeExperimentalGoal.bind(this);
+    this.onChangeResolution = this.onChangeResolution.bind(this);
   }
 
   submitAddToQueue() {
@@ -59,6 +73,7 @@ class DataCollection extends React.Component {
       'centringMethod',
       'detector_roi_mode',
       'space_group',
+      'exp_goal',
       'prefix',
       'subdir',
       'type',
@@ -74,6 +89,44 @@ class DataCollection extends React.Component {
 
   defaultParameters() {
     resetLastUsedParameters(this);
+  }
+
+  /**
+   * Applies the preset dose-calculation values associated with the selected
+   * experimental goal.
+   *
+   * @param {string} goal - Selected experimental goal label.
+   */
+  onChangeExperimentalGoal(goal) {
+    const initResolution =
+      Number.parseFloat(this.props.taskData.parameters.resolution) || 0;
+    const { nextDoseLimit, nextResolution } = getExperimentalGoalPreset(
+      goal,
+      initResolution,
+    );
+
+    if (nextDoseLimit !== null) {
+      this.props.change('dose_limit', nextDoseLimit);
+    }
+    if (nextResolution !== null) {
+      this.props.change('resolution', nextResolution);
+    }
+  }
+
+  /**
+   * Updates the dose limit when the resolution changes for goals that derive
+   * dose directly from the resolution value.
+   *
+   * @param {string | number} resolutionValue - Updated resolution field value.
+   */
+  onChangeResolution(resolutionValue) {
+    const nextDoseLimit = getDoseLimitFromResolutionGoal(
+      this.props.exp_goal,
+      resolutionValue,
+    );
+    if (nextDoseLimit !== null) {
+      this.props.change('dose_limit', nextDoseLimit);
+    }
   }
 
   showDCFooter() {
@@ -265,8 +318,32 @@ class DataCollection extends React.Component {
                 propName="resolution"
                 type="number"
                 label="Resolution"
+                onChange={(event) => {
+                  if (this.props.doseContext.doseCalculationEnabled) {
+                    this.onChangeResolution(event.target.value);
+                  }
+                }}
               />
             </FieldsRow>
+            {this.props.doseContext.doseCalculationEnabled && (
+              <FieldsRow>
+                <StaticField
+                  disabled
+                  type="number"
+                  label="Calculated Flux (ph/s)"
+                  data={this.props.calculatedValues.calculatedFlux}
+                  col1="7"
+                  col2="4"
+                />
+                <StaticField
+                  type="number"
+                  label="Highest resolution"
+                  data={this.props.calculatedValues.resHigh}
+                  col1="7"
+                  col2="4"
+                />
+              </FieldsRow>
+            )}
             {this.props.taskResult.energyScan.length > 0 && (
               <FieldsRow>
                 <SelectField
@@ -275,6 +352,67 @@ class DataCollection extends React.Component {
                   propName="energy"
                   label="Energy scan result"
                   list={energyList}
+                />
+              </FieldsRow>
+            )}
+            {this.props.doseContext.doseCalculationEnabled && (
+              <FieldsRow>
+                <StaticField
+                  col1="7"
+                  col2="4"
+                  label="Max images"
+                  data={
+                    this.props.calculatedValues.noMaxImage === 'N/A'
+                      ? 'N/A'
+                      : Math.floor(this.props.calculatedValues.maxImages)
+                  }
+                  style={{ color: this.props.colorCodes.maxImgColor.color }}
+                />
+                <StaticField
+                  col1="7"
+                  col2="4"
+                  label="Estimated dose (MGy)"
+                  data={
+                    this.props.calculatedValues.noEstimatedDose === 'N/A'
+                      ? 'N/A'
+                      : this.props.calculatedValues.estimatedDose.toFixed(2)
+                  }
+                  style={{ color: this.props.colorCodes.doseColor.color }}
+                />
+              </FieldsRow>
+            )}
+            {this.props.doseContext.doseCalculationEnabled && (
+              <FieldsRow>
+                <Field
+                  name="exp_goal"
+                  component={(prop) => (
+                    <Form.Group as={Row} controlId={prop.input.name}>
+                      <Form.Label column sm={2} style={{ textAlign: 'left' }}>
+                        Goal
+                      </Form.Label>
+                      <Col sm={8}>
+                        <Form.Select
+                          value={prop.input.value}
+                          onChange={(event) => {
+                            prop.input.onChange(event);
+                            this.onChangeExperimentalGoal(event.target.value);
+                          }}
+                        >
+                          {DOSE_EXPERIMENTAL_GOALS.map((val) => (
+                            <option key={val} value={val}>
+                              {val}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </Col>
+                    </Form.Group>
+                  )}
+                  label="Goal"
+                />
+                <InputField
+                  propName="dose_limit"
+                  type="number"
+                  label="Dose limit (MGy)"
                 />
               </FieldsRow>
             )}
@@ -379,6 +517,50 @@ export default connect((state) => {
     state.taskForm.defaultParameters[type.toLowerCase()];
   const { parameters } = state.taskForm.taskData;
 
+  // Dose calculation logic
+  const dataCollectionValues = selector(
+    state,
+    'transmission',
+    'exp_time',
+    'num_images',
+    'dose_limit',
+    'exp_goal',
+    'energy',
+  );
+
+  const doseContext = getDoseCalculationContext(state, dataCollectionValues);
+
+  let estimatedDose = null;
+  let maxImages = null;
+  let noEstimatedDose = false;
+  let noMaxImage = false;
+  let resHigh = null;
+  let colorCodes = '';
+  let calculatedFlux = null;
+
+  if (doseContext.doseCalculationEnabled) {
+    ({ estimatedDose, maxImages, noEstimatedDose, noMaxImage } =
+      calculateDoseValues(doseContext));
+
+    calculatedFlux = calculateFluxValue(doseContext);
+
+    resHigh = interpolateResolutionForEnergy(
+      doseContext.userEnergy,
+      doseContext.beamlineEnergy,
+      Math.max(...doseContext.resolutionLimits),
+    );
+
+    colorCodes = calculateDoseColors({
+      noEstimatedDose,
+      noMaxImage,
+      estimatedDose,
+      doseLimit: doseContext.doseLimit,
+      numberImages: doseContext.numberImages,
+      maxImages,
+    });
+  }
+  // End of dose calculation logic
+
   if (Number.parseFloat(parameters.osc_range) === 0) {
     parameters.osc_range =
       state.taskForm.defaultParameters[
@@ -404,10 +586,28 @@ export default connect((state) => {
     filename: fname,
     acqParametersLimits: limits,
     beamline: state.beamline,
+    exp_goal: dataCollectionValues.exp_goal,
+    doseContext,
+    calculatedValues: {
+      estimatedDose,
+      maxImages,
+      resHigh,
+      calculatedFlux,
+      noEstimatedDose,
+      noMaxImage,
+    },
+    colorCodes,
     detector_mode_list: acq_parameters.detector_mode_list,
     components: state.uiproperties.sample_view_motors.components,
     initialValues: {
       ...parameters,
+      // Dose calculation: keep backward-compatible defaults if fields are absent.
+      dose_limit:
+        parameters.dose_limit ??
+        (Number.isFinite(Number.parseFloat(parameters.resolution))
+          ? Number.parseFloat(parameters.resolution) * 10
+          : Number.parseFloat(toFixed(state, 'resolution')) * 10),
+      exp_goal: parameters.exp_goal || DOSE_EXPERIMENTAL_GOALS[0],
       beam_size: state.sampleview.currentAperture,
       resolution: toFixed(state, 'resolution'),
       energy: toFixed(state, 'energy'),

@@ -1,3 +1,4 @@
+// eslint-disable-next-line complexity
 function warn(values, props) {
   const warnings = {};
   if (!props.beamline.hardwareObjects) {
@@ -77,6 +78,27 @@ function warn(values, props) {
 
   if (!values.prefix) {
     warnings.prefix = 'Prefix is empty';
+  }
+
+  // Dose calculation related warnings
+  if (props.doseContext.doseCalculationEnabled) {
+    const fluxDensity = Number.parseFloat(
+      props.beamline.hardwareObjects['flux.flux_parameters'].value.flux_density,
+    );
+    const fluxDensityEnergy = Number.parseFloat(
+      props.beamline.hardwareObjects['flux.flux_parameters'].value
+        .flux_density_energy,
+    );
+
+    if (
+      fluxDensity === -1 || // flux density not measured at all
+      fluxDensity === 0 || // no beam
+      Math.abs(fluxDensityEnergy - energy) > 50 // flux density measured at different energy
+    ) {
+      warnings.estimated_dose = `No beam or flux is not measured at set energy.
+                                Please make sure there is beam and measure the flux
+                                at ${energy} ' keV`;
+    }
   }
 
   return warnings;
