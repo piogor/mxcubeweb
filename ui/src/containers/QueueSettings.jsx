@@ -6,7 +6,6 @@ import {
   setAutoMountSample,
   setCentringMethod,
   setQueueSettings,
-  setSSXMode,
 } from '../actions/queue';
 import { CENTRING_METHOD } from '../constants';
 import GroupFolderInput from './GroupFolderInput.jsx';
@@ -78,16 +77,6 @@ export default function QueueSettings() {
             checked={queueState.rememberParametersBetweenSamples}
             label="Remember parameters between samples"
             id="remember-params"
-          />
-        </Dropdown.Item>
-        <Dropdown.Item>
-          <Form.Check
-            type="checkbox"
-            name="ssxMode"
-            onChange={(e) => dispatch(setSSXMode(e.target.checked))}
-            checked={queueState.ssxMode}
-            label="SSX Mode"
-            id="ssx-mode"
           />
         </Dropdown.Item>
         <Dropdown.Divider />

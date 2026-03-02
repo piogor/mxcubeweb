@@ -26,11 +26,6 @@ interface RemoveSamplesFromQueueAction {
   sampleIDList: string[];
 }
 
-interface SetSsxModeAction {
-  type: 'SET_SSX_MODE';
-  ssx_mode: boolean;
-}
-
 interface SetInitialStateAction {
   type: 'SET_INITIAL_STATE';
   data: {
@@ -48,7 +43,6 @@ interface QueueSliceState {
   queue: string[];
   queueStatus: QueueStatus;
   rememberParametersBetweenSamples: boolean;
-  ssxMode: boolean;
 }
 
 const INITIAL_STATE: QueueSliceState = {
@@ -61,7 +55,6 @@ const INITIAL_STATE: QueueSliceState = {
   queue: [],
   queueStatus: QUEUE_STOPPED,
   rememberParametersBetweenSamples: true,
-  ssxMode: false,
 };
 
 const queueSlice = createSlice({
@@ -124,12 +117,6 @@ const queueSlice = createSlice({
           );
         },
       )
-      .addCase(
-        'SET_SSX_MODE',
-        (state, action: SetSsxModeAction) => {
-          state.ssxMode = action.ssx_mode;
-        },
-      )
       .addCase('SET_INITIAL_STATE', (state, action: SetInitialStateAction) => {
         const { queue } = action.data;
         state.queue = queue.queue;
@@ -142,7 +129,6 @@ const queueSlice = createSlice({
           queue.rememberParametersBetweenSamples;
         state.current = queue.current;
         state.queueStatus = queue.queueStatus;
-        state.ssxMode = queue.ssxMode;
       });
   },
 });
