@@ -1,5 +1,6 @@
 import { Collapse, ProgressBar } from 'react-bootstrap';
 import { contextMenu } from 'react-contexify';
+import { FaExternalLinkAlt } from 'react-icons/fa';
 
 import { deleteTask } from '../../actions/queue';
 import {
@@ -52,6 +53,9 @@ export default function TaskItemContainer({
     (state) =>
       state.sampleGrid.sampleList[currentSampleID]?.tasks[index]?.state,
   );
+
+  const taskState = taskInfo?.state;
+  const resultUrl = taskInfo?.resultUrl;
 
   function handleContextMenu(e) {
     e.preventDefault();
@@ -118,8 +122,14 @@ export default function TaskItemContainer({
           style={{ display: 'flex' }}
         >
           <span className={styles.nodeName} style={{ fontWeight: 'bold' }}>
-            {pointIDString} {dataLabel}
+            {pointIDString} {dataLabel}{' '}
+            {resultUrl && (
+              <a href={resultUrl} target="_blank" rel="noopener noreferrer">
+                <FaExternalLinkAlt />
+              </a>
+            )}
           </span>
+
           {taskState === TASK_RUNNING && (
             <ProgressBar
               variant="info"

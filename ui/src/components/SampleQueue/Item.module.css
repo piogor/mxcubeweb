@@ -37,6 +37,10 @@
   display: flex;
 }
 
+.nodeName a {
+  margin-left: 0.5rem;
+}
+
 .taskBody {
   margin: 0;
   padding: 0;

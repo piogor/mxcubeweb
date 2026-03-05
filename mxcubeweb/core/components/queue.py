@@ -415,6 +415,7 @@ class TaskNodeModel(QueueNodeModel):
     diffractionPlan: list["TaskNodeModel"] | None = None  # noqa: N815
     diffractionPlanID: int | None = None  # noqa: N815
     name: str | None = None
+    resultUrl: str | None = None  # noqa: N815
 
     @field_validator("sampleID", "name", mode="before")
     @classmethod
@@ -798,7 +799,7 @@ class QueueSerializer:
         parameters["fullPath"] = os.path.join(
             parameters["path"], parameters["fileName"]
         )
-
+        _model, entry = self.get_entry(node._node_id)
         return XRFNodeModel(
             label="XRF Scan",
             type="xrf_spectrum",
@@ -809,6 +810,7 @@ class QueueSerializer:
             taskIndex=self.app.queue.node_index(node)["idx"],
             queueID=node._node_id,
             state=state,
+            resultUrl=entry.result_url,
         )
 
     def _handle_energy_node(self, sample_node, node) -> TaskNodeModel:
@@ -829,6 +831,8 @@ class QueueSerializer:
         parameters["fullPath"] = os.path.join(
             parameters["path"], parameters["fileName"]
         )
+
+        _model, entry = self.get_entry(node._node_id)
 
         return EnergyScanNodeModel(
             label="Energy Scan",
@@ -2670,6 +2674,8 @@ class Queue(ComponentBase):
         HWR.beamline.queue_manager.connect(
             "energy_scan_finished", self.energy_scan_finished
         )
+
+        HWR.beamline.queue_manager.connect("taskResultReady", signals.update_queue)
 
     def queue_toggle_sample(self, entry):
         if isinstance(entry, qe.SampleQueueEntry):
