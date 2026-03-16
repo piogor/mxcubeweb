@@ -169,13 +169,18 @@ export function FieldsHeader({ title }) {
   );
 }
 
-export function StaticField({ label, data, col1, col2 }) {
+export function StaticField({ label, data, col1, col2, style }) {
   return (
     <Form.Group as={Row} style={{ textAlign: 'left' }}>
-      <Form.Label column sm={col1 || 2}>
+      <Form.Label column sm={col1 || 2} style={style || {}}>
         <b>{label}:</b>
       </Form.Label>
-      <Form.Label className="form-label-StaticField" column sm={col2 || 9}>
+      <Form.Label
+        className="form-label-StaticField"
+        column
+        sm={col2 || 9}
+        style={style || {}}
+      >
         {data}
       </Form.Label>
     </Form.Group>
