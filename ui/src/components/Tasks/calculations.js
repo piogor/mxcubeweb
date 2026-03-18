@@ -197,11 +197,6 @@ export function getDoseCalculationContext(state, dataCollectionValues) {
   );
   const fluxCurrent = Number.parseFloat(hardwareObjects.flux.value);
 
-  // we calculate the base flux density at the beamline energy, which is then scaled by the user energy and transmission for dose calculations.
-  const beamx = Number.parseFloat(hardwareObjects['beam.beam_size_hor'].value);
-  const beamy = Number.parseFloat(hardwareObjects['beam.beam_size_ver'].value);
-  const baseFluxDensity = fluxCurrent / transmission / beamx / beamy / 10_000;
-
   const wavelengthRaw = Number.parseFloat(
     hardwareObjects['energy.wavelength'].value,
   );
