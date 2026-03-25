@@ -27,8 +27,8 @@ class HOFluxParametersModel(HOActuatorModel):
 hwr_logger = logging.getLogger("MX3.HWR")
 
 
-class BioMAXFluxParametersAdapter(ActuatorAdapterBase):
-    """Adapter for BioMAX Flux parameters Hardware Object.
+class MAXIVFluxParametersAdapter(ActuatorAdapterBase):
+    """Adapter for MAXIV Flux parameters Hardware Object.
 
     A web socket is used to communicate information on longer running processes.
     """
@@ -58,7 +58,7 @@ class BioMAXFluxParametersAdapter(ActuatorAdapterBase):
 
     def get_value(self) -> HOFluxParametersModel:
         flux_info_dict = {
-            "flux_density": -1.1,
+            "flux_density": -1.0,
             "flux_density_energy": 0.0,
         }
 
@@ -84,7 +84,7 @@ class BioMAXFluxParametersAdapter(ActuatorAdapterBase):
         """Stop the execution."""
 
     def limits(self):
-        """Read the wavelengt limits.
+        """Read the limits.
 
         Returns:
             (tuple): Two floats (min, max) limits.

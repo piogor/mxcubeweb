@@ -2,10 +2,11 @@ import logging
 from typing import ClassVar
 
 from mxcubecore.HardwareObjects.MAXIV.BioMAX import BIOMAXFlux
+from mxcubecore.HardwareObjects.MAXIV.MicroMAX import MICROMAXFlux
 
 from mxcubeweb.core.adapter.actuator_adapter import ActuatorAdapter
 from mxcubeweb.core.adapter.maxiv_flux_parameters_adapter import (
-    BioMAXFluxParametersAdapter,
+    MAXIVFluxParametersAdapter,
 )
 from mxcubeweb.core.models.adaptermodels import FloatValueModel
 from mxcubeweb.core.models.configmodels import ResourceHandlerConfigModel
@@ -16,14 +17,15 @@ resource_handler_config = ResourceHandlerConfigModel(attributes=["data", "get_va
 hwr_logger = logging.getLogger("MX3.HWR")
 
 
-class BioMAXFluxAdapter(ActuatorAdapter):
-    """Adapter for BioMAX Flux Hardware Object.
+class MAXIVFluxAdapter(ActuatorAdapter):
+    """Adapter for MAXIV Flux Hardware Object.
 
     A web socket is used to communicate information on longer running processes.
     """
 
     SUPPORTED_TYPES: ClassVar[list[object]] = [
         BIOMAXFlux.BIOMAXFlux,
+        MICROMAXFlux.MICROMAXFlux,
     ]
 
     def __init__(  # noqa: D417
@@ -35,7 +37,7 @@ class BioMAXFluxAdapter(ActuatorAdapter):
             ho (object): Hardware object.
         """
         super().__init__(ho, role, app, resource_handler_config)
-        super()._add_adapter("flux_parameters", self._ho, BioMAXFluxParametersAdapter)
+        super()._add_adapter("flux_parameters", self._ho, MAXIVFluxParametersAdapter)
         self._type = "ACTUATOR"
 
         try:
