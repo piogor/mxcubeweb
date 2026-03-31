@@ -81,7 +81,7 @@ function warn(values, props) {
   }
 
   // Dose calculation related warnings
-  if (props.doseContext.doseCalculationEnabled) {
+  if (props.doseContext?.doseCalculationEnabled) {
     const fluxDensity = Number.parseFloat(
       props.beamline.hardwareObjects['flux.flux_parameters'].value.flux_density,
     );
