@@ -101,6 +101,10 @@ function warn(values, props) {
     }
   }
 
+  if (!values.prefix) {
+    warnings.prefix = 'Prefix is empty';
+  }
+
   return warnings;
 }
 
