@@ -26,6 +26,7 @@ function SampleViewContainer() {
   const hardwareObjects = useSelector(
     (state) => state.beamline.hardwareObjects,
   );
+
   const sampleChangerContents = useSelector(
     (state) => state.sampleChanger.contents,
   );
