@@ -82,10 +82,7 @@ function warn(values, props) {
 
   const numImages = Number.parseInt(values.num_images, 10);
   const maxImages = props.doseEstimate?.max_images;
-  if (
-    Number.isFinite(maxImages) &&
-    numImages > maxImages
-  ) {
+  if (Number.isFinite(maxImages) && numImages > maxImages) {
     warnings.num_images = `Exceeds max images (${maxImages}) at current settings`;
   }
 
