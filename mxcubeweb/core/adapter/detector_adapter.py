@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, FilePath
 
 from mxcubeweb.core.adapter.adapter_base import AdapterBase
 from mxcubeweb.core.models.configmodels import ResourceHandlerConfigModel
+from mxcubeweb.core.util.networkutils import remote_addr
 
 resource_handler_config = ResourceHandlerConfigModel(
     commands=["display_image"],
@@ -47,7 +48,7 @@ class DetectorAdapter(AdapterBase):
 
         if path:
             fpath, img = HWR.beamline.detector.get_actual_file_path(path, img_num)
-            HWR.beamline.collect.display_image(fpath, img)
+            HWR.beamline.collect.display_image(fpath, img, remote_addr())
             fpath = HWR.beamline.session.get_path_with_proposal_as_root(fpath)
 
             if self.app.CONFIG.braggy is not None and self.app.CONFIG.braggy.USE_BRAGGY:
