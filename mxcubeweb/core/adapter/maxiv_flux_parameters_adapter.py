@@ -1,6 +1,6 @@
 import logging
 
-from pydantic.v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from mxcubeweb.core.adapter.actuator_adapter import ActuatorAdapterBase
 from mxcubeweb.core.models.adaptermodels import (
