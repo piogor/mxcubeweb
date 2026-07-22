@@ -57,7 +57,7 @@ pytest:
       micromamba create --file conda-environment.yml --yes
       git
       python==$PYTHON_VER
-      python-ldap==3.4.3
+      python-ldap==3.4.5
     - micromamba activate mxcubeweb
     # Install MXCuBE-Web Python backend server:
     # * Install mxcubeweb as editable
@@ -120,7 +120,7 @@ cypress:
     - source /opt/conda/etc/profile.d/conda.sh
     - mamba env create --file conda-environment.yml --yes
     - conda activate mxcubeweb
-    - mamba install python-ldap==3.4.3
+    - mamba install python-ldap==3.4.5
     # Install MXCuBE-Web Python backend server
     # Install mxcubeweb as editable
     # Install mxcubecore from its git repository
