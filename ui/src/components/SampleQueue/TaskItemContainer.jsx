@@ -49,9 +49,9 @@ export default function TaskItemContainer({
   const displayData = useAppSelector(
     (state) => state.queueGUI.displayData[data.queueID] || {},
   );
-  const taskState = useAppSelector(
+  const taskInfo = useAppSelector(
     (state) =>
-      state.sampleGrid.sampleList[currentSampleID]?.tasks[index]?.state,
+      state.sampleGrid.sampleList[currentSampleID]?.tasks[index] ?? null,
   );
 
   const taskState = taskInfo?.state;
