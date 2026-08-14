@@ -1,10 +1,10 @@
 import contextlib
-import inspect
 import itertools
 import json
 import logging
 import os
 import re
+from typing import Any
 
 from mxcubecore import HardwareRepository as HWR
 from mxcubecore import queue_entry as qe
