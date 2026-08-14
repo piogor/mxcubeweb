@@ -110,11 +110,13 @@ const queueSlice = createSlice({
         },
       )
       .addCase(
-        'REMOVE_SAMPLES_FROM_QUEUE',
-        (state, action: RemoveSamplesFromQueueAction) => {
-          state.queue = state.queue.filter(
-            (sampleID) => !action.sampleIDList.includes(sampleID),
-          );
+        'SET_CURRENT_SAMPLE',
+        (state, action: SetCurrentSampleAction) => {
+          if (!state.rememberParametersBetweenSamples) {
+            clearAllLastUsedParameters();
+          }
+
+          state.current = action.sampleID;
         },
       )
       .addCase('SET_INITIAL_STATE', (state, action: SetInitialStateAction) => {
