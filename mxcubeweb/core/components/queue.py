@@ -289,7 +289,7 @@ class DataCollectionParameters(TaskDataPathModel):
     shutterless: bool = True
     take_snapshots: int = 0
     detector_binning_mode: str | None = None
-    detector_roi_mode: str|int = 0
+    detector_roi_mode: str | int = 0
     mesh_range: dict[str, float] = {}
     num_triggers: int = 0
     num_images_per_trigger: int = 0
