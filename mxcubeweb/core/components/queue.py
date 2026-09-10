@@ -799,7 +799,7 @@ class QueueSerializer:
         parameters["fullPath"] = os.path.join(
             parameters["path"], parameters["fileName"]
         )
-        _model, entry = self.get_entry(node._node_id)
+        _model, entry = self.app.queue.get_entry(node._node_id)
         return XRFNodeModel(
             label="XRF Scan",
             type="xrf_spectrum",
@@ -832,7 +832,7 @@ class QueueSerializer:
             parameters["path"], parameters["fileName"]
         )
 
-        _model, entry = self.get_entry(node._node_id)
+        _model, entry = self.app.queue.get_entry(node._node_id)
 
         return EnergyScanNodeModel(
             label="Energy Scan",
