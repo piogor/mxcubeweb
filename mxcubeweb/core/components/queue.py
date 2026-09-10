@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import re
-from typing import Any
+from typing import Annotated, Any
 
 from mxcubecore import HardwareRepository as HWR
 from mxcubecore import queue_entry as qe
@@ -12,7 +12,15 @@ from mxcubecore.model import queue_model_enumerables as qme
 from mxcubecore.model import queue_model_objects as qmo
 from mxcubecore.model.queue_model_enumerables import CENTRING_METHOD
 from mxcubecore.queue_entry.base_queue_entry import QUEUE_ENTRY_STATUS
-from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Discriminator,
+    Field,
+    Tag,
+    ValidationError,
+    ValidationInfo,
+    field_validator,
+)
 
 from mxcubeweb.core.components.component_base import ComponentBase
 from mxcubeweb.core.models.adaptermodels import (
@@ -270,6 +278,17 @@ def normalize_mesh_range(value):
     raise ValueError("mesh_range must be a dictionary with horizontal/vertical ranges")
 
 
+class GenericTaskParameters(TaskDataPathModel):
+    # Extras are allowed, so that the validation of parameters needed for a generic
+    # task is done using the DATA_MODEL Pydantic model related to an appropriate
+    # Queue Entry. It cannot be done there, as the `parameters` object does not
+    # have data on which task is set for execution.
+    model_config = {
+        **TaskDataPathModel.model_config,
+        "extra": "allow",
+    }
+
+
 class DataCollectionParameters(TaskDataPathModel):
     # From mxcubecore Datacollection, osc, mesh, helical
     first_image: int = Field(0, description="First image number")
@@ -443,45 +462,65 @@ class WorkflowNodeModel(TaskNodeModel):
     parameters: WorkflowParameters
 
 
-def build_task_node_model(value: object):
-    if not isinstance(value, dict):
-        return value
+class GenericTaskNodeModel(TaskNodeModel):
+    parameters: GenericTaskParameters
 
-    normalized = dict(value)
-    task_type = normalized.get("type")
+    @field_validator("parameters", mode="before")
+    @classmethod
+    def use_qe_data_model(cls, value: Any, info: ValidationInfo):
+        task_name = info.data.get("type")
 
-    if task_type == "Interleaved":
-        # Interleaved tasks are shaped like a DataCollection (plus wedges/
-        # taskIndexList), so validate against that schema, but restore the
-        # original type afterwards so downstream routing (add_interleaved,
-        # the interleave swap logic) still recognizes it as "Interleaved".
-        normalized["type"] = "DataCollection"
-        model = DataCollectionNodeModel.model_validate(normalized)
-        model.type = "Interleaved"
-        return model
+        queue_entry = qe.get_queue_entry_from_task_name(task_name)
 
-    if task_type == "Characterisation":
-        return CharacterisationNodeModel.model_validate(normalized)
+        data_model = queue_entry.DATA_MODEL
 
-    if task_type == "xrf_spectrum":
-        return XRFNodeModel.model_validate(normalized)
+        parameters = {
+            **HWR.beamline.get_default_acquisition_parameters(task_name).as_dict(),
+            **value,
+        }
 
-    if task_type == "energy_scan":
-        return EnergyScanNodeModel.model_validate(normalized)
+        data_model.model_validate(dict.fromkeys(data_model.model_fields, parameters))
 
-    if task_type in {"Workflow", "GphlWorkflow"}:
-        return WorkflowNodeModel.model_validate(normalized)
-
-    return DataCollectionNodeModel.model_validate(normalized)
+        return parameters
 
 
-TaskNodeUnion = (
-    DataCollectionNodeModel
-    | CharacterisationNodeModel
-    | XRFNodeModel
-    | EnergyScanNodeModel
-    | WorkflowNodeModel
-)
+def _get_task_tag(task_model: Any) -> str | None:
+    """Map task type to a tagged union discriminator, see TaskNodeUnion."""
+    MODEL_TO_TAG = {
+        DataCollectionNodeModel: "DataCollection",
+        CharacterisationNodeModel: "Characterisation",
+        XRFNodeModel: "XRF",
+        EnergyScanNodeModel: "EnergyScan",
+        WorkflowNodeModel: "Workflow",
+        GenericTaskNodeModel: "Generic",
+    }
+
+    TASK_TYPE_TO_TAG = {
+        "DataCollection": "DataCollection",
+        "Interleaved": "DataCollection",
+        "Characterisation": "Characterisation",
+        "xrf_spectrum": "XRF",
+        "energy_scan": "EnergyScan",
+        "Workflow": "Workflow",
+        "GphlWorkflow": "Workflow",
+    }
+    # for the case of serialization, a pydantic model is constructed containing tasks.
+    if isinstance(task_model, TaskNodeModel):
+        return MODEL_TO_TAG.get(type(task_model), "Generic")
+    # for client-sent tasks
+    if isinstance(task_model, dict) and "type" in task_model:
+        return TASK_TYPE_TO_TAG.get(task_model["type"], "Generic")
+
+
+TaskNodeUnion = Annotated[
+    Annotated[GenericTaskNodeModel, Tag("Generic")]
+    | Annotated[DataCollectionNodeModel, Tag("DataCollection")]
+    | Annotated[CharacterisationNodeModel, Tag("Characterisation")]
+    | Annotated[XRFNodeModel, Tag("XRF")]
+    | Annotated[EnergyScanNodeModel, Tag("EnergyScan")]
+    | Annotated[WorkflowNodeModel, Tag("Workflow")],
+    Discriminator(_get_task_tag),
+]
 
 
 class SampleNode(QueueNodeModel):
@@ -495,18 +534,6 @@ class SampleNode(QueueNodeModel):
     defaultPrefix: str | None = ""  # noqa: N815
     defaultSubDir: str | None = ""  # noqa: N815
     tasks: list[TaskNodeUnion]
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_tasks(cls, value):
-        if isinstance(value, dict):
-            tasks = value.get("tasks")
-            if isinstance(tasks, list):
-                normalized = dict(value)
-                normalized["tasks"] = [build_task_node_model(task) for task in tasks]
-                return normalized
-
-        return value
 
     @field_validator("sampleID", "code", "location", "defaultPrefix", mode="before")
     @classmethod
