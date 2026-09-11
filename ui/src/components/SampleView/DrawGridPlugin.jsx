@@ -714,6 +714,16 @@ export default class DrawGridPlugin {
 
         break;
       }
+      case 'micromax-zig-zag': {
+        count = this.micromaxZigZagCellCount(
+          currentRow,
+          currentCol,
+          numRows,
+          numCols,
+        );
+
+        break;
+      }
       case 'top-down-zig-zag': {
         count = this.topDownZigZagCellCount(
           currentRow,
@@ -820,6 +830,26 @@ export default class DrawGridPlugin {
     if (currentRow !== numCols - 1 && (numCols - currentRow + 1) % 2 !== 0) {
       cellCount =
         numRows * numCols - currentRow * numRows + currentCol - numRows + 1;
+    }
+
+    return cellCount;
+  }
+
+  /**
+   * micromax zig-zag indexing of cells (see countCells for doc)
+   * 7 6 1
+   * 8 5 2
+   * 9 4 3
+   * The currentCol and currentRow parameters are swapped compared to other cell
+   * count functions to follow the real call, see the method cellFillingFromData
+   */
+  micromaxZigZagCellCount(currentCol, currentRow, numRows, numCols) {
+    // count cell index when going down
+    let cellCount = (numCols - currentCol - 1) * numRows + (currentRow + 1);
+
+    if ((numCols - currentCol - 1) % 2 !== 0) {
+      // count cell index when going up
+      cellCount = (numCols - currentCol - 1) * numRows + (numRows - currentRow);
     }
 
     return cellCount;
