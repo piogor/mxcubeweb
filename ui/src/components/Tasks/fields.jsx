@@ -79,7 +79,8 @@ export function toFixed(state, hoName, parameterName = null) {
   const pname = parameterName !== null ? parameterName : hoName;
 
   const value = withTaskData
-    ? state.taskForm.taskData.parameters[pname]
+    ? state.taskForm.taskData.parameters[pname] ||
+      state.beamline.hardwareObjects[hoName].value
     : state.beamline.hardwareObjects[hoName].value;
 
   if (value === undefined) {

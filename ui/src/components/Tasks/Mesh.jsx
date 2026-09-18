@@ -75,7 +75,7 @@ class Mesh extends React.Component {
       'shape',
     ];
 
-    saveToLastUsedParameters(this.props.taskData.type, params);
+    saveToLastUsedParameters(this.props.taskData.type, params, ['osc_start']);
     this.props.addTask(parameters, stringFields, runNow);
     this.props.hide();
   }
