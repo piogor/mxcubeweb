@@ -15,6 +15,7 @@ default:
 
 stages:
   - check
+  - build
 
 .javascript-job:
   stage: check
@@ -142,3 +143,42 @@ cypress:
       &
   script:
     - pnpm --dir ui run e2e
+
+build-web-assets:
+  stage: build
+  image: node:24.13.0-alpine
+
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: $CI_COMMIT_TAG
+      when: on_success
+      variables:
+        RELEASE_NAME: "$CI_COMMIT_TAG"
+    - when: manual
+      variables:
+        RELEASE_NAME: "$CI_COMMIT_SHORT_SHA"
+
+  variables:
+    CYPRESS_INSTALL_BINARY: "0"
+    PACKAGE_FILE: "mxcubeweb-build.tar.gz"
+    PACKAGE_BASE_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic"
+    PACKAGE_REGISTRY_URL: "${PACKAGE_BASE_URL}/${CI_PROJECT_NAME}/${RELEASE_NAME}"
+
+  before_script:
+    - apk --no-cache add curl
+    - corepack enable
+
+  script:
+    - cd ui
+    - pnpm install --frozen-lockfile
+    - pnpm run build
+    - tar -czf "${PACKAGE_FILE}" build/
+    - >
+      curl --fail-with-body
+      --header "JOB-TOKEN: ${CI_JOB_TOKEN}"
+      --upload-file ${PACKAGE_FILE}
+      "${PACKAGE_REGISTRY_URL}/${PACKAGE_FILE}"
+
+  after_script:
+    - 'echo "Package URL: ${PACKAGE_REGISTRY_URL}/${PACKAGE_FILE}"'
