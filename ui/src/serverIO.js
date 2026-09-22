@@ -58,6 +58,7 @@ import {
   setPixelsPerMm,
   showVideoMessageOverlay,
   startClickCentring as startClickCentringAction,
+  stopClickCentring,
 } from './reducers/sampleview';
 import { setShapes, updateShapes } from './reducers/shapes';
 import { setEnergyScanResult } from './reducers/taskResult';
@@ -307,6 +308,7 @@ class ServerIO {
         const msg = `${numClicks}-Click Centring: \nSelect centered position or center`;
         dispatch(showVideoMessageOverlay({ show: true, msg }));
       } else {
+        dispatch(stopClickCentring())
         const msg = 'Auto loop centring: \n Save position or re-center';
         dispatch(showVideoMessageOverlay({ show: true, msg }));
       }
