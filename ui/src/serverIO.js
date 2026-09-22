@@ -308,7 +308,7 @@ class ServerIO {
         const msg = `${numClicks}-Click Centring: \nSelect centered position or center`;
         dispatch(showVideoMessageOverlay({ show: true, msg }));
       } else {
-        dispatch(stopClickCentring())
+        dispatch(stopClickCentring());
         const msg = 'Auto loop centring: \n Save position or re-center';
         dispatch(showVideoMessageOverlay({ show: true, msg }));
       }
