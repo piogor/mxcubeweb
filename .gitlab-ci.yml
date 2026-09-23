@@ -1,12 +1,11 @@
 ---
-
 include:
-  - project: 'kits-maxiv/cfg-maxiv-gitlabci'
+  - project: "kits-maxiv/cfg-maxiv-gitlabci"
     file: PreCommit.gitlab-ci.yml
 
 variables:
   MXCUBE_CORE_GIT_REPO: https://gitlab.maxiv.lu.se/kits-maxiv/mxcube/mxcubecore.git
-  MXCUBE_CORE_GIT_BRANCH: rebase-on-3c730e5
+  MXCUBE_CORE_GIT_BRANCH: maxiv-develop
   XDG_CACHE_HOME: "${CI_PROJECT_DIR}/.cache"
   XDG_DATA_HOME: "${CI_PROJECT_DIR}/.share"
 
@@ -28,19 +27,19 @@ stages:
     # Install Node.js dependencies
     - node --version
     - pnpm --version
-    - pnpm --prefix=./ui install --frozen-lockfile
+    - pnpm --dir ui install --frozen-lockfile
 
 # Check JavaScript formatting with Prettier
 prettier:
   extends: .javascript-job
   script:
-    - pnpm --prefix=./ui run prettier
+    - pnpm --dir ui run prettier
 
 # Check JavaScript linting with ESLint
 eslint:
   extends: .javascript-job
   script:
-    - pnpm --prefix=./ui run eslint
+    - pnpm --dir ui run eslint
 
 # Check Python tests with pytest
 pytest:
@@ -129,11 +128,11 @@ cypress:
       --editable .
       "mxcubecore @ git+${MXCUBE_CORE_GIT_REPO}@${MXCUBE_CORE_GIT_BRANCH}"
     # Install Node.js dependencies for MXCuBE-Web frontend
-    - pnpm --prefix=./ui install --frozen-lockfile
+    - pnpm --dir ui install --frozen-lockfile
     # Install Cypress binaries
-    - pnpm --prefix=./ui exec cypress install
+    - pnpm --dir ui exec cypress install
     # Build MXCuBE-Web frontend
-    - pnpm --prefix=./ui run build
+    - pnpm --dir ui run build
     # Run MXCuBE-Web Python backend server
     - >
       mxcubeweb-server
@@ -142,4 +141,4 @@ cypress:
       --static-folder $(pwd)/ui/build/
       &
   script:
-    - pnpm --prefix=./ui run e2e
+    - pnpm --dir ui run e2e
